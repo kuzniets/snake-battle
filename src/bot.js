@@ -25,9 +25,17 @@ import {
 } from './utils';
 
 const moves = ['LEFT', 'UP', 'RIGHT', 'DOWN'];
+const bodyParts = [
+    ELEMENT.BODY_HORIZONTAL,
+    ELEMENT.BODY_LEFT_DOWN,
+    ELEMENT.BODY_LEFT_UP,
+    ELEMENT.BODY_VERTICAL,
+    ELEMENT.BODY_RIGHT_DOWN,
+    ELEMENT.BODY_RIGHT_UP,
+]
 // Bot Example
 export function getNextSnakeMove(board, logger) {
-
+    const startTime = new Date();
     if (isGameOver(board)) {
         return '';
     }
@@ -35,15 +43,16 @@ export function getNextSnakeMove(board, logger) {
     if (!headPosition) {
         return '';
     }
-    // logger('Head:' + JSON.stringify(headPosition));
 
     const sorround = getSorroundCells(headPosition); // (LEFT, UP, RIGHT, DOWN)
 
     const closestBonusElements = findAllElementCoordinates(board, getTargets(board));
     const target = findClosestElement(headPosition, closestBonusElements);
 
-    // logger('Sorround: ' + JSON.stringify(sorround));
-    return combineCellsData(sorround, target, board);
+    const move = combineCellsData(sorround, target, board);
+    const stopTime = new Date();
+    console.log(stopTime - startTime);
+    return move;
 }
 
 function getSorroundCells(position) {
@@ -78,7 +87,7 @@ function combineCellsData(sorround, target, board) {
     let cellsData = sorround.map((cell, index) => {
         return {
             distance: distance(cell, target),
-            isBarrier: getBarriers(board, cell) === ELEMENT.WALL,
+            isBarrier: getBarriers(board, cell),
             cellIndex: index,
             element: getElementByXY(board, cell),
         }
@@ -90,15 +99,17 @@ function combineCellsData(sorround, target, board) {
 }
 
 function makeMoove(cellsData) {
-    const initialMove = cellsData.find(cell => !cell.isBarrier)
+    let freeCells = cellsData.filter(cell => !cell.isBarrier);
+    let initialMove = freeCells[randomInteger(0, freeCells.length - 1)];
 
-    return cellsData.reduce((min, cell) => {
-        if (cell.isBarrier) {
-            return initialMove;
-        }
-
+    if (!initialMove) {
+        initialMove = cellsData.find(cell => bodyParts.includes(cell.element)) || cellsData[0];
+    }
+    const closest = cellsData.reduce((min, cell) => {
         return cell.distance < min.distance ? cell : min;
     }, cellsData[0]);
+
+    return closest.isBarrier ? initialMove : closest;
 }
 
 function distance(p1, p2) {
@@ -120,8 +131,8 @@ function getSnakeLength(board) {
 
 function getTargets(board) {
     const snakeLength = getSnakeLength(board);
-
-    if (snakeLength > 5) {
+    const head = getHeadPosition(board);
+    if (snakeLength > 5 || isEvil(board, head)) {
         return [ELEMENT.APPLE, ELEMENT.FLYING_PILL, ELEMENT.FURY_PILL, ELEMENT.GOLD, ELEMENT.STONE];
     }
 
@@ -129,9 +140,9 @@ function getTargets(board) {
 }
 
 function getBarriers(board, cell) {
-    let barriers = [
+    const barriers = [
         ELEMENT.WALL,
-        // ELEMENT.START_FLOOR,
+        ELEMENT.START_FLOOR,
         ELEMENT.ENEMY_TAIL_END_DOWN,
         ELEMENT.ENEMY_TAIL_END_LEFT,
         ELEMENT.ENEMY_TAIL_END_UP,
@@ -143,16 +154,35 @@ function getBarriers(board, cell) {
         ELEMENT.ENEMY_BODY_LEFT_UP,
         ELEMENT.ENEMY_BODY_RIGHT_DOWN,
         ELEMENT.ENEMY_BODY_RIGHT_UP,
-        // ELEMENT.BODY_HORIZONTAL,
-        // ELEMENT.BODY_VERTICAL
+        ELEMENT.BODY_HORIZONTAL,
+        ELEMENT.BODY_VERTICAL,
+        ELEMENT.BODY_LEFT_DOWN,
+        ELEMENT.BODY_LEFT_UP,
+        ELEMENT.BODY_RIGHT_DOWN,
+        ELEMENT.BODY_RIGHT_UP,
     ];
+    const snakeLength = getSnakeLength(board);
 
-    if (getSnakeLength(board) < 5) {
+    if (snakeLength < 5 && !isEvil(board, cell)) {
         barriers.push(ELEMENT.STONE);
     }
 
-    console.log(barriers.includes(getElementByXY(board, cell)))
     return barriers.includes(getElementByXY(board, cell));
+}
+
+function randomInteger(min, max) {
+    let rand = min - 0.5 + Math.random() * (max - min + 1)
+    rand = Math.round(rand);
+
+    return rand;
+}
+
+function isEvil(board, cell) {
+    return getElementByXY(board, cell) === ELEMENT.HEAD_EVIL;
+}
+
+function findNeck() {
+
 }
 
 //===================== EXAMPLES
