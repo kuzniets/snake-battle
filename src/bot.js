@@ -132,7 +132,7 @@ function getSnakeLength(board) {
 function getTargets(board) {
     const snakeLength = getSnakeLength(board);
     const head = getHeadPosition(board);
-    if (snakeLength > 5 || isEvil(board, head)) {
+    if (snakeLength > 4 || isEvil(board, head)) {
         return [ELEMENT.APPLE, ELEMENT.FLYING_PILL, ELEMENT.FURY_PILL, ELEMENT.GOLD, ELEMENT.STONE];
     }
 
@@ -163,7 +163,7 @@ function getBarriers(board, cell) {
     ];
     const snakeLength = getSnakeLength(board);
 
-    if (snakeLength < 5 && !isEvil(board, cell)) {
+    if (snakeLength < 4 && !isEvil(board, cell)) {
         barriers.push(ELEMENT.STONE);
     }
 
